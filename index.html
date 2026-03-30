@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prize Spinner</title>
+    <title>Style It Up Spinner</title>
     <style>
       :root {
         --bg: #0f1117;
@@ -45,6 +45,62 @@
         text-align: center;
         max-width: 420px;
         line-height: 1.45;
+      }
+
+      .logo-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 6px 0 10px;
+      }
+
+      .logo {
+        display: none; /* set to block after reading ?type=... */
+        width: min(220px, 70vw);
+        height: auto;
+        object-fit: contain;
+      }
+
+      .controls {
+        width: min(92vw, 420px);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      label {
+        font-size: 0.9rem;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      input[type="tel"] {
+        width: 100%;
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(26, 29, 39, 0.65);
+        color: var(--text);
+        padding: 0 14px;
+        outline: none;
+      }
+
+      input[type="tel"]:focus {
+        border-color: rgba(124, 92, 255, 0.7);
+        box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.15);
+      }
+
+      .phone-hint {
+        min-height: 18px;
+        font-size: 0.8rem;
+        color: var(--muted);
       }
 
       .wheel-wrap {
@@ -167,10 +223,37 @@
       .legend strong {
         color: #9aa3b5;
       }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 480px) {
+        #spinAndWinBtn,
+        #spinBtn,
+        #changeNumberBtn {
+          width: 100%;
+          max-width: 360px;
+        }
+      }
+
+      #screen2 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #screen2 #spinBtn {
+        margin-left: auto;
+        margin-right: auto;
+      }
     </style>
   </head>
   <body>
-    <h1>Prize spinner</h1>
+    <h1>Style It Up Spinner</h1>
+    <div class="logo-row" aria-hidden="true">
+      <img id="logo" class="logo" src="./a_logo.png" alt="Brand logo" />
+    </div>
     <p class="sub">
       <!-- Eight segments on the wheel. The spin always awards one of:
       <strong style="color: #c4b5fd">10%, 20%, 30% flat discount</strong> or
@@ -180,28 +263,53 @@
       selected. -->
     </p>
 
-    <div class="wheel-wrap" aria-live="polite">
-      <div class="pointer" aria-hidden="true"></div>
-      <div class="wheel" id="wheel" role="img" aria-label="Prize wheel">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow
-                dx="0"
-                dy="1"
-                stdDeviation="1"
-                flood-opacity="0.25"
-              />
-            </filter>
-          </defs>
-          <g id="slices"></g>
-        </svg>
+    <div id="screen1" class="controls">
+      <div class="field">
+        <label for="phoneInput">Mobile number</label>
+        <input
+          id="phoneInput"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          placeholder="Enter your mobile number"
+        />
+        <div class="phone-hint" id="phoneHint"></div>
+        <button type="button" class="spin-btn" id="spinAndWinBtn" disabled>
+          Spin &amp; Win
+        </button>
       </div>
-      <div class="hub">SPIN</div>
     </div>
 
-    <button type="button" class="spin-btn" id="spinBtn">Spin</button>
-    <div class="result" id="result"></div>
+    <div id="screen2" class="hidden">
+      <div class="wheel-wrap" aria-live="polite">
+        <div class="pointer" aria-hidden="true"></div>
+        <div class="wheel" id="wheel" role="img" aria-label="Prize wheel">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow
+                  dx="0"
+                  dy="1"
+                  stdDeviation="1"
+                  flood-opacity="0.25"
+                />
+              </filter>
+            </defs>
+            <g id="slices"></g>
+          </svg>
+        </div>
+        <div class="hub">SPIN</div>
+      </div>
+
+      <button type="button" class="spin-btn" id="spinBtn">Spin</button>
+    </div>
+
+    <div id="screen3" class="hidden">
+      <div class="result" id="result"></div>
+      <!-- <button type="button" class="spin-btn" id="changeNumberBtn">
+        Use another number
+      </button> -->
+    </div>
 
     <!-- <div class="legend">
       <div>
@@ -212,72 +320,149 @@
 
     <script>
       (function () {
-        const SLICE = 360 / 8;
+        const params = new URLSearchParams(window.location.search);
+        const parsedType = parseInt(params.get("type") || "1", 10);
+        const offerType = [1, 2, 3, 4, 5].includes(parsedType) ? parsedType : 1;
+
+        function makeLogoDataUri(text, color) {
+          // Simple placeholder logo so the page works without external assets.
+          // Replace these data URIs with your real logo URLs/files if needed.
+          const safeText = String(text).replace(/[<>&"]/g, "");
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="700" height="210" viewBox="0 0 700 210">
+            <rect x="0" y="0" width="700" height="210" rx="26" fill="${color}"/>
+            <circle cx="110" cy="105" r="52" fill="rgba(255,255,255,0.18)"/>
+            <text x="190" y="122" font-size="54" font-family="Segoe UI, Arial" fill="#ffffff" font-weight="700"> ${safeText} </text>
+          </svg>`;
+          return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        }
+
         // Segments in clockwise order starting from first slice's center at -90° + SLICE/2 in our math
         // Index 0 = top-right of first slice when wheel at 0... We draw from -90° (top) clockwise.
-        const segments = [
-          {
-            label: "Rs. 10",
-            sub: "Rs. 10 Flat discount",
-            winnable: true,
-            hue: 265,
-            type: "Discount",
+        const typeConfigs = {
+          1: {
+            // PNGs must be served by your web server (or placed next to this HTML).
+            // Defaults: logo-type-{type}.png (e.g. logo-type-1.png).
+            logoSrc: "./a_logo.png",
+            logoFallbackColor: "#7c5cff",
+            segments: [
+              {
+                label: "Rs. 20",
+                sub: "Rs. 20 Flat discount on the purchase of Rs. 150 or more",
+                winnable: true,
+                hue: 265,
+                type: "Discount",
+              },
+              {
+                label: "Rs. 40",
+                sub: "Rs. 40 Flat discount on the purchase of Rs. 300 or more",
+                winnable: true,
+                hue: 255,
+                type: "Discount",
+              },
+              {
+                label: "Rs. 100",
+                sub: "Rs. 100 Flat discount on the purchase of Rs. 500 or more",
+                winnable: false,
+                hue: 245,
+                type: "Discount",
+              },
+              {
+                label: "Rs. 200",
+                sub: "Rs. 200 Flat discount on the purchase of Rs. 600 or more",
+                winnable: false,
+                hue: 0,
+                type: "Discount",
+              },
+              {
+                label: "Rs. 50",
+                sub: "Rs. 50 Cashback on next purchase of Rs. 349 or more, valid for 15 days",
+                winnable: true,
+                hue: 200,
+                type: "Cashback",
+              },
+              {
+                label: "Rs. 80",
+                sub: "Rs. 80 Cashback on next purchase of Rs. 799 or more, valid for 15 days",
+                winnable: true,
+                hue: 190,
+                type: "Cashback",
+              },
+              {
+                label: "Rs. 150",
+                sub: "Rs. 150 Cashback on next purchase of Rs. 800 or more, valid for 15 days",
+                winnable: false,
+                hue: 175,
+                type: "Cashback",
+              },
+              {
+                label: "Rs. 200",
+                sub: "Rs. 200 Cashback on next purchase of Rs. 1000 or more, valid for 15 days",
+                winnable: false,
+                hue: 25,
+                type: "Cashback",
+              },
+            ],
           },
-          {
-            label: "Rs. 20",
-            sub: "Rs. 20 Flat discount",
-            winnable: true,
-            hue: 255,
-            type: "Discount",
+          2: {
+            logoSrc: "./a_logo.png",
+            logoFallbackColor: "#22c55e",
+            // TODO: replace with your own segments for type=2
+            segments: [], // will be replaced below
           },
-          {
-            label: "Rs. 30",
-            sub: "Rs. 30 Flat discount",
-            winnable: true,
-            hue: 245,
-            type: "Discount",
+          3: {
+            logoSrc: "./a_logo.png",
+            logoFallbackColor: "#f59e0b",
+            // TODO: replace with your own segments for type=3
+            segments: [], // will be replaced below
           },
-          {
-            label: "Rs. 50",
-            sub: "Rs. 50 Flat discount",
-            winnable: false,
-            hue: 0,
-            type: "Discount",
+          4: {
+            logoSrc: "./a_logo.png",
+            logoFallbackColor: "#ef4444",
+            // TODO: replace with your own segments for type=4
+            segments: [], // will be replaced below
           },
-          {
-            label: "Rs. 20",
-            sub: "Rs. 20 Cashback on next purchase",
-            winnable: true,
-            hue: 200,
-            type: "Cashback",
+          5: {
+            logoSrc: "./a_logo.png",
+            logoFallbackColor: "#06b6d4",
+            // TODO: replace with your own segments for type=5
+            segments: [], // will be replaced below
           },
-          {
-            label: "Rs. 40",
-            sub: "Rs. 40 Cashback on next purchase",
-            winnable: true,
-            hue: 190,
-            type: "Cashback",
-          },
-          {
-            label: "Rs. 60",
-            sub: "Rs. 60 Cashback on next purchase",
-            winnable: false,
-            hue: 175,
-            type: "Cashback",
-          },
-          {
-            label: "Rs. 100",
-            sub: "Rs. 100 Cashback on next purchase",
-            winnable: false,
-            hue: 25,
-            type: "Cashback",
-          },
-        ];
+        };
+
+        // Default to type=1 segments for types that aren't configured yet.
+        // (So the wheel still works even before you paste other segment sets.)
+        if (!typeConfigs[offerType].segments.length) {
+          typeConfigs[offerType].segments = typeConfigs[1].segments;
+        }
+
+        let segments = typeConfigs[offerType].segments;
+        let SLICE = 360 / segments.length;
+
+        const logoEl = document.getElementById("logo");
+        if (logoEl) {
+          const logoFromQuery = params.get("logo");
+          const desiredLogoSrc =
+            logoFromQuery || typeConfigs[offerType].logoSrc || "";
+          logoEl.src = desiredLogoSrc;
+          logoEl.style.display = "block";
+          logoEl.onerror = function () {
+            logoEl.onerror = null;
+            const fb = typeConfigs[offerType].logoFallbackColor || "#7c5cff";
+            logoEl.src = makeLogoDataUri(`LOGO TYPE ${offerType}`, fb);
+          };
+        }
 
         const slicesG = document.getElementById("slices");
         const wheel = document.getElementById("wheel");
         const spinBtn = document.getElementById("spinBtn");
+        const spinAndWinBtn = document.getElementById("spinAndWinBtn");
         const resultEl = document.getElementById("result");
+        const screen1 = document.getElementById("screen1");
+        const screen2 = document.getElementById("screen2");
+        const screen3 = document.getElementById("screen3");
+        const changeNumberBtn = document.getElementById("changeNumberBtn");
+        const phoneInput = document.getElementById("phoneInput");
+        const phoneHintEl = document.getElementById("phoneHint");
 
         const cx = 100;
         const cy = 100;
@@ -290,7 +475,8 @@
 
         function buildSlices() {
           slicesG.innerHTML = "";
-          for (let i = 0; i < 8; i++) {
+          // Wheel adapts to the number of segments for the current ?type=...
+          for (let i = 0; i < segments.length; i++) {
             const start = i * SLICE;
             const end = start + SLICE;
             const [x1, y1] = polar(cx, cy, r, start);
@@ -336,10 +522,18 @@
             sub.setAttribute("y", sy + 10);
             sub.setAttribute("text-anchor", "middle");
             sub.setAttribute("dominant-baseline", "middle");
-            sub.setAttribute("fill", "rgba(240,242,248,0.75)");
+            // Different colors for segment type label.
+            // (Discount = purple, Cashback = sky blue)
+            const subFill =
+              seg.type === "Discount"
+                ? "rgba(196, 181, 253, 0.95)"
+                : seg.type === "Cashback"
+                  ? "rgba(125, 211, 252, 0.95)"
+                  : "rgba(240,242,248,0.75)";
+            sub.setAttribute("fill", subFill);
             sub.setAttribute("font-size", "6.5");
             sub.setAttribute("transform", `rotate(${mid} ${sx} ${sy})`);
-            sub.textContent = seg.type + "1111";
+            sub.textContent = seg.type;
             slicesG.appendChild(sub);
           }
         }
@@ -348,6 +542,150 @@
 
         let currentRotation = 0;
         let spinning = false;
+        let currentPhoneDigits = "";
+
+        const STORAGE_PREFIX = "flowprompt_spinner_won_v1";
+
+        function normalizePhone(raw) {
+          const digits = String(raw || "").replace(/\D/g, "");
+          return digits;
+        }
+
+        function typeWonKey() {
+          return `${STORAGE_PREFIX}:type=${offerType}`;
+        }
+
+        function parseLegacyWin(raw) {
+          // Legacy compatibility: older versions stored a plain "1" or JSON.
+          if (raw === "1") {
+            return {
+              label: "",
+              sub: "Previous win",
+              type: offerType,
+              wonAt: 0,
+            };
+          }
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") return parsed;
+            return {
+              label: "",
+              sub: "Previous win",
+              type: offerType,
+              wonAt: 0,
+            };
+          } catch {
+            return {
+              label: "",
+              sub: "Previous win",
+              type: offerType,
+              wonAt: 0,
+            };
+          }
+        }
+
+        function getTypeWin() {
+          const direct = window.localStorage.getItem(typeWonKey());
+          if (direct) return parseLegacyWin(direct);
+
+          // Migration: if older code stored wins per phone, treat any match as "already spun"
+          // for this type.
+          const phonePrefix = `${STORAGE_PREFIX}:type=${offerType}:phone=`;
+          for (let i = 0; i < window.localStorage.length; i++) {
+            const k = window.localStorage.key(i);
+            if (!k || !k.startsWith(phonePrefix)) continue;
+            const raw = window.localStorage.getItem(k);
+            if (raw) return parseLegacyWin(raw);
+          }
+          return null;
+        }
+
+        function setTypeWin(seg) {
+          if (!seg) return;
+          window.localStorage.setItem(
+            typeWonKey(),
+            JSON.stringify({
+              label: seg.label,
+              sub: seg.sub,
+              type: offerType,
+              wonAt: Date.now(),
+            }),
+          );
+        }
+
+        function escapeHtml(s) {
+          return String(s).replace(/[&<>"']/g, function (c) {
+            const map = {
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            };
+            return map[c] || c;
+          });
+        }
+
+        function isValidIndianMobile(phoneDigits) {
+          // Basic India rule: 10 digits and starts with 6-9.
+          return /^[6-9]\d{9}$/.test(phoneDigits);
+        }
+
+        function updateUIForPhone() {
+          if (!phoneInput || !phoneHintEl || !spinAndWinBtn) return;
+
+          // If the user already spun for this type on this device, go straight to Screen 3
+          // and do not show the mobile number UI.
+          const existingTypeWin = getTypeWin();
+          if (existingTypeWin) {
+            if (resultEl) {
+              resultEl.innerHTML =
+                '<div class="prize">You already won!, take screenshot</div>' +
+                '<div class="hint">Mobile: ' +
+                escapeHtml(existingTypeWin.phone || "") +
+                "</div>" +
+                '<div class="prize">Prize: ' +
+                escapeHtml(existingTypeWin.sub || "Previous win") +
+                "</div>";
+            }
+            screen1 && screen1.classList.add("hidden");
+            screen2 && screen2.classList.add("hidden");
+            screen3 && screen3.classList.remove("hidden");
+            spinAndWinBtn.disabled = true;
+            if (spinBtn) spinBtn.disabled = true;
+            return;
+          }
+
+          const phoneDigits = normalizePhone(phoneInput.value);
+
+          if (!phoneDigits) {
+            screen1 && screen1.classList.remove("hidden");
+            screen2 && screen2.classList.add("hidden");
+            screen3 && screen3.classList.add("hidden");
+            spinAndWinBtn.disabled = true;
+            phoneHintEl.textContent = "Enter your mobile number to spin.";
+            return;
+          }
+
+          if (!isValidIndianMobile(phoneDigits)) {
+            screen1 && screen1.classList.remove("hidden");
+            screen2 && screen2.classList.add("hidden");
+            screen3 && screen3.classList.add("hidden");
+            spinAndWinBtn.disabled = true;
+            phoneHintEl.textContent =
+              "Enter a valid 10-digit India mobile number (starts with 6-9).";
+            return;
+          }
+
+          currentPhoneDigits = phoneDigits;
+
+          // No previous spin for this type on this device: allow Screen 1.
+          screen1 && screen1.classList.remove("hidden");
+          screen2 && screen2.classList.add("hidden");
+          screen3 && screen3.classList.add("hidden");
+          spinAndWinBtn.disabled = false;
+          phoneHintEl.textContent = "";
+        }
 
         /**
          * Pointer fixed at top. Slice centers (clockwise from top): (i + 0.5) * SLICE.
@@ -370,11 +708,36 @@
           const pool = segments
             .map((s, idx) => (s.winnable ? idx : -1))
             .filter((idx) => idx >= 0);
+          // Fallback: if a type is misconfigured with no winnable segments, spin still works.
+          if (!pool.length) return Math.floor(Math.random() * segments.length);
           return pool[Math.floor(Math.random() * pool.length)];
         }
 
-        spinBtn.addEventListener("click", function () {
+        function doSpin() {
           if (spinning) return;
+          const phoneDigits =
+            currentPhoneDigits || normalizePhone(phoneInput.value);
+          if (!phoneDigits || !isValidIndianMobile(phoneDigits)) {
+            updateUIForPhone();
+            return;
+          }
+
+          const existingTypeWin = getTypeWin();
+          if (existingTypeWin) {
+            resultEl.innerHTML =
+              '<div class="prize">You already won!, take screenshot</div>' +
+              '<div class="hint">Mobile: ' +
+              escapeHtml(existingTypeWin.phone || phoneDigits || "") +
+              "</div>";
+            resultEl.innerHTML +=
+              '<div class="hint">Prize: ' +
+              escapeHtml(existingTypeWin.sub || "Previous win") +
+              "</div>";
+            screen2 && screen2.classList.add("hidden");
+            screen3 && screen3.classList.remove("hidden");
+            return;
+          }
+
           spinning = true;
           spinBtn.disabled = true;
           resultEl.innerHTML = "";
@@ -390,17 +753,136 @@
           const seg = segments[winIndex];
           window.setTimeout(function () {
             spinning = false;
-            spinBtn.disabled = false;
-            resultEl.innerHTML =
-              '<div class="prize">You won: ' +
-              // seg.label +
-              // " " +
-              seg.sub +
-              "</div>";
-            //  +
-            // '<div class="hint">50% discount and 100% cashback are never awarded.</div>';
+
+            // Single spin per (type): store the result even if it's non-winnable.
+            if (seg) setTypeWin(seg, phoneDigits);
+
+            if (seg && seg.winnable) {
+              resultEl.innerHTML =
+                '<div class="prize">Congratulations! You won!, take screenshot</div>' +
+                '<div class="hint">Mobile: ' +
+                escapeHtml(phoneDigits) +
+                "</div>" +
+                '<div class="prize">Prize: ' +
+                escapeHtml(seg.sub) +
+                "</div>";
+            } else {
+              resultEl.innerHTML =
+                '<div class="prize">Sorry, better luck next time.</div>' +
+                '<div class="hint">Mobile: ' +
+                escapeHtml(phoneDigits) +
+                "</div>" +
+                '<div class="hint">Prize: ' +
+                (seg ? escapeHtml(seg.sub) : "") +
+                "</div>";
+            }
+
+            // Hide spinner screen and show winning screen.
+            screen2 && screen2.classList.add("hidden");
+            screen3 && screen3.classList.remove("hidden");
           }, 4200);
-        });
+        }
+
+        if (spinBtn) {
+          spinBtn.addEventListener("click", function () {
+            doSpin();
+          });
+        }
+
+        // Screen 1 -> Screen 2 (or Screen 3 if already won)
+        if (spinAndWinBtn) {
+          spinAndWinBtn.addEventListener("click", function () {
+            if (spinning) return;
+
+            const phoneDigits = normalizePhone(phoneInput.value);
+            if (!phoneDigits || !isValidIndianMobile(phoneDigits)) {
+              updateUIForPhone();
+              return;
+            }
+
+            currentPhoneDigits = phoneDigits;
+
+            const existingTypeWin = getTypeWin();
+            if (existingTypeWin) {
+              resultEl.innerHTML =
+                '<div class="prize">You already won!, take screenshot</div>' +
+                '<div class="hint">Mobile: ' +
+                escapeHtml(existingTypeWin.phone || phoneDigits || "") +
+                "</div>" +
+                '<div class="prize">Prize: ' +
+                escapeHtml(existingTypeWin.sub || "Previous win") +
+                "</div>";
+              screen1 && screen1.classList.add("hidden");
+              screen2 && screen2.classList.add("hidden");
+              screen3 && screen3.classList.remove("hidden");
+              spinBtn && (spinBtn.disabled = true);
+              return;
+            }
+
+            // No previous win: go to spinner screen (wheel visible, but not spinning yet).
+            resultEl.innerHTML = "";
+            currentRotation = 0;
+            spinning = false;
+            wheel.style.transitionDuration = "0s";
+            wheel.style.transform = "rotate(0deg)";
+            spinBtn && (spinBtn.disabled = false);
+
+            screen1 && screen1.classList.add("hidden");
+            screen2 && screen2.classList.remove("hidden");
+            screen3 && screen3.classList.add("hidden");
+          });
+        }
+
+        if (changeNumberBtn) {
+          changeNumberBtn.addEventListener("click", function () {
+            currentPhoneDigits = "";
+            if (phoneInput) phoneInput.value = "";
+            resultEl.innerHTML = "";
+            phoneHintEl.textContent = "Enter your mobile number to spin.";
+
+            screen3 && screen3.classList.add("hidden");
+            screen2 && screen2.classList.add("hidden");
+            screen1 && screen1.classList.remove("hidden");
+
+            spinAndWinBtn && (spinAndWinBtn.disabled = true);
+            spinBtn && (spinBtn.disabled = true);
+            currentRotation = 0;
+            wheel.style.transitionDuration = "0s";
+            wheel.style.transform = "rotate(0deg)";
+          });
+        }
+
+        if (phoneInput) {
+          phoneInput.addEventListener("input", function () {
+            // Only update screen 1; screen 2/3 are hidden while spinning.
+            updateUIForPhone();
+          });
+          phoneInput.addEventListener("change", function () {
+            updateUIForPhone();
+          });
+          phoneInput.addEventListener("keyup", function () {
+            updateUIForPhone();
+          });
+          phoneInput.addEventListener("blur", function () {
+            updateUIForPhone();
+          });
+        }
+
+        // Initial screen state.
+        if (screen1) screen1.classList.remove("hidden");
+        if (screen2) screen2.classList.add("hidden");
+        if (screen3) screen3.classList.add("hidden");
+
+        // Set initial button state from current input (if any).
+        updateUIForPhone();
+        // Mobile autofill sometimes updates values without firing input/change immediately.
+        // Re-check shortly after load to catch those cases.
+        setTimeout(function () {
+          updateUIForPhone();
+        }, 300);
+        setTimeout(function () {
+          updateUIForPhone();
+        }, 900);
       })();
     </script>
   </body>
