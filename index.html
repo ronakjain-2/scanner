@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prize Spinner</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --card: #1a1d27;
+        --accent: #7c5cff;
+        --text: #e8eaef;
+        --muted: #8b919d;
+        --gold: #f4c14f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(ellipse at top, #1e2240 0%, var(--bg) 55%);
+        color: var(--text);
+        padding: 24px;
+      }
+
+      h1 {
+        font-size: 1.35rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+        letter-spacing: 0.02em;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 0.875rem;
+        margin-bottom: 28px;
+        text-align: center;
+        max-width: 420px;
+        line-height: 1.45;
+      }
+
+      .wheel-wrap {
+        position: relative;
+        width: min(92vw, 360px);
+        aspect-ratio: 1;
+        filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.45));
+      }
+
+      /* Pointer at top */
+      .pointer {
+        position: absolute;
+        left: 50%;
+        top: -6px;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 16px solid transparent;
+        border-right: 16px solid transparent;
+        border-top: 28px solid var(--gold);
+        z-index: 10;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+      }
+
+      .hub {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 56px;
+        height: 56px;
+        margin: -28px 0 0 -28px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #2a2f42, #1a1d27);
+        border: 3px solid var(--gold);
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: var(--gold);
+        letter-spacing: 0.05em;
+      }
+
+      .wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        position: relative;
+        transition: transform cubic-bezier(0.2, 0.85, 0.25, 1);
+        border: 8px solid #2d3142;
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+      }
+
+      .wheel svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+      }
+
+      .spin-btn {
+        margin-top: 28px;
+        padding: 14px 36px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 999px;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--accent), #5b3fd9);
+        color: #fff;
+        letter-spacing: 0.04em;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease,
+          opacity 0.2s;
+        box-shadow: 0 8px 24px rgba(124, 92, 255, 0.35);
+      }
+
+      .spin-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(124, 92, 255, 0.45);
+      }
+
+      .spin-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .result {
+        margin-top: 22px;
+        min-height: 3.5rem;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .result .prize {
+        color: var(--gold);
+      }
+
+      .result .hint {
+        font-size: 0.8rem;
+        font-weight: 400;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .legend {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 20px;
+        max-width: 400px;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      .legend strong {
+        color: #9aa3b5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Prize spinner</h1>
+    <p class="sub">
+      <!-- Eight segments on the wheel. The spin always awards one of:
+      <strong style="color: #c4b5fd">10%, 20%, 30% flat discount</strong> or
+      <strong style="color: #7dd3fc">20%, 40%, 60% cashback</strong>.
+      <strong style="color: #f87171">50% discount</strong> and
+      <strong style="color: #f87171">100% cashback</strong> are shown but never
+      selected. -->
+    </p>
+
+    <div class="wheel-wrap" aria-live="polite">
+      <div class="pointer" aria-hidden="true"></div>
+      <div class="wheel" id="wheel" role="img" aria-label="Prize wheel">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow
+                dx="0"
+                dy="1"
+                stdDeviation="1"
+                flood-opacity="0.25"
+              />
+            </filter>
+          </defs>
+          <g id="slices"></g>
+        </svg>
+      </div>
+      <div class="hub">SPIN</div>
+    </div>
+
+    <button type="button" class="spin-btn" id="spinBtn">Spin</button>
+    <div class="result" id="result"></div>
+
+    <!-- <div class="legend">
+      <div>
+        <strong>Flat discount</strong><br />10% · 20% · 30% · 50% (no win)
+      </div>
+      <div><strong>Cashback</strong><br />20% · 40% · 60% · 100% (no win)</div>
+    </div> -->
+
+    <script>
+      (function () {
+        const SLICE = 360 / 8;
+        // Segments in clockwise order starting from first slice's center at -90° + SLICE/2 in our math
+        // Index 0 = top-right of first slice when wheel at 0... We draw from -90° (top) clockwise.
+        const segments = [
+          {
+            label: "Rs. 10",
+            sub: "Rs. 10 Flat discount",
+            winnable: true,
+            hue: 265,
+            type: "Discount",
+          },
+          {
+            label: "Rs. 20",
+            sub: "Rs. 20 Flat discount",
+            winnable: true,
+            hue: 255,
+            type: "Discount",
+          },
+          {
+            label: "Rs. 30",
+            sub: "Rs. 30 Flat discount",
+            winnable: true,
+            hue: 245,
+            type: "Discount",
+          },
+          {
+            label: "Rs. 50",
+            sub: "Rs. 50 Flat discount",
+            winnable: false,
+            hue: 0,
+            type: "Discount",
+          },
+          {
+            label: "Rs. 20",
+            sub: "Rs. 20 Cashback on next purchase",
+            winnable: true,
+            hue: 200,
+            type: "Cashback",
+          },
+          {
+            label: "Rs. 40",
+            sub: "Rs. 40 Cashback on next purchase",
+            winnable: true,
+            hue: 190,
+            type: "Cashback",
+          },
+          {
+            label: "Rs. 60",
+            sub: "Rs. 60 Cashback on next purchase",
+            winnable: false,
+            hue: 175,
+            type: "Cashback",
+          },
+          {
+            label: "Rs. 100",
+            sub: "Rs. 100 Cashback on next purchase",
+            winnable: false,
+            hue: 25,
+            type: "Cashback",
+          },
+        ];
+
+        const slicesG = document.getElementById("slices");
+        const wheel = document.getElementById("wheel");
+        const spinBtn = document.getElementById("spinBtn");
+        const resultEl = document.getElementById("result");
+
+        const cx = 100;
+        const cy = 100;
+        const r = 98;
+
+        function polar(cx, cy, r, angleDeg) {
+          const a = ((angleDeg - 90) * Math.PI) / 180;
+          return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+        }
+
+        function buildSlices() {
+          slicesG.innerHTML = "";
+          for (let i = 0; i < 8; i++) {
+            const start = i * SLICE;
+            const end = start + SLICE;
+            const [x1, y1] = polar(cx, cy, r, start);
+            const [x2, y2] = polar(cx, cy, r, end);
+            const large = SLICE > 180 ? 1 : 0;
+            const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+            const path = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "path",
+            );
+            const seg = segments[i];
+            const light = seg.winnable ? 42 : 28;
+            const sat = seg.winnable ? 55 : 35;
+            path.setAttribute("d", d);
+            path.setAttribute("fill", `hsl(${seg.hue} ${sat}% ${light}%)`);
+            path.setAttribute("stroke", "rgba(255,255,255,0.12)");
+            path.setAttribute("stroke-width", "0.8");
+            slicesG.appendChild(path);
+
+            const mid = start + SLICE / 2;
+            const [tx, ty] = polar(cx, cy, r * 0.68, mid);
+            const text = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "text",
+            );
+            text.setAttribute("x", tx);
+            text.setAttribute("y", ty);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("dominant-baseline", "middle");
+            text.setAttribute("fill", "#f0f2f8");
+            text.setAttribute("font-size", "11");
+            text.setAttribute("font-weight", "700");
+            text.setAttribute("transform", `rotate(${mid} ${tx} ${ty})`);
+            text.textContent = seg.label;
+            slicesG.appendChild(text);
+
+            const sub = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "text",
+            );
+            const [sx, sy] = polar(cx, cy, r * 0.5, mid);
+            sub.setAttribute("x", sx);
+            sub.setAttribute("y", sy + 10);
+            sub.setAttribute("text-anchor", "middle");
+            sub.setAttribute("dominant-baseline", "middle");
+            sub.setAttribute("fill", "rgba(240,242,248,0.75)");
+            sub.setAttribute("font-size", "6.5");
+            sub.setAttribute("transform", `rotate(${mid} ${sx} ${sy})`);
+            sub.textContent = seg.type;
+            slicesG.appendChild(sub);
+          }
+        }
+
+        buildSlices();
+
+        let currentRotation = 0;
+        let spinning = false;
+
+        /**
+         * Pointer fixed at top. Slice centers (clockwise from top): (i + 0.5) * SLICE.
+         * CSS rotate(R) is clockwise; after spin, (centerCW + R) mod 360 === 0 at pointer.
+         * So finalRotation mod 360 === (360 - centerCW) mod 360.
+         */
+        function computeFinalRotation(winIndex, jitterDeg) {
+          const centerCW = (winIndex + 0.5) * SLICE + jitterDeg;
+          const needMod = (((360 - (centerCW % 360)) % 360) + 360) % 360;
+          const currentMod = ((currentRotation % 360) + 360) % 360;
+          let add = (needMod - currentMod + 360) % 360;
+          if (add === 0) {
+            add = 360;
+          }
+          const extraSpins = 5 + Math.floor(Math.random() * 4);
+          return currentRotation + extraSpins * 360 + add;
+        }
+
+        function pickWinnableIndex() {
+          const pool = segments
+            .map((s, idx) => (s.winnable ? idx : -1))
+            .filter((idx) => idx >= 0);
+          return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        spinBtn.addEventListener("click", function () {
+          if (spinning) return;
+          spinning = true;
+          spinBtn.disabled = true;
+          resultEl.innerHTML = "";
+
+          const winIndex = pickWinnableIndex();
+          const jitter = (Math.random() - 0.5) * (SLICE * 0.55);
+          const finalRotation = computeFinalRotation(winIndex, jitter);
+          currentRotation = finalRotation;
+
+          wheel.style.transitionDuration = "4.2s";
+          wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+          const seg = segments[winIndex];
+          window.setTimeout(function () {
+            spinning = false;
+            spinBtn.disabled = false;
+            resultEl.innerHTML =
+              '<div class="prize">You won: ' +
+              // seg.label +
+              // " " +
+              seg.sub +
+              "</div>";
+            //  +
+            // '<div class="hint">50% discount and 100% cashback are never awarded.</div>';
+          }, 4200);
+        });
+      })();
+    </script>
+  </body>
+</html>
