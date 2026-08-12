@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Style It Up Spinner</title>
+    <title>Rakhi Special Spin & Win</title>
     <style>
       :root {
         --bg: #0f1117;
@@ -36,6 +36,7 @@
         font-weight: 600;
         margin: 0 0 8px;
         letter-spacing: 0.02em;
+        text-align: center;
       }
 
       .sub {
@@ -260,10 +261,111 @@
       #screen3 #mobile-number {
         text-align: center;
       }
+
+      /* Language picker modal */
+      .lang-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(6, 7, 12, 0.72);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 20px;
+      }
+
+      .lang-card {
+        position: relative;
+        width: min(92vw, 360px);
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 22px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      }
+
+      .lang-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-size: 0.85rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .lang-close:hover {
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Persistent control to reopen the language picker at any time. */
+      .lang-toggle {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 50;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(26, 29, 39, 0.8);
+        color: var(--text);
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+      }
+
+      .lang-toggle:hover {
+        border-color: rgba(124, 92, 255, 0.6);
+      }
+
+      .lang-card h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 4px;
+        line-height: 1.5;
+      }
+
+      .lang-options {
+        margin-top: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .lang-option {
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease;
+      }
+
+      .lang-option:hover {
+        background: rgba(124, 92, 255, 0.18);
+        border-color: rgba(124, 92, 255, 0.5);
+      }
     </style>
   </head>
   <body>
-    <h1>Style It Up Spinner</h1>
+    <button type="button" id="langToggleBtn" class="lang-toggle">
+      🌐 EN
+    </button>
+    <h1 id="pageHeading">🎁 Rakhi Special Spin &amp; Win 🎁</h1>
     <div class="logo-row" aria-hidden="true">
       <img id="logo" class="logo" src="./a_logo.png" alt="Brand logo" />
     </div>
@@ -275,6 +377,10 @@
       <strong style="color: #f87171">100% cashback</strong> are shown but never
       selected. -->
     </p>
+
+    <!--
+    Mobile number entry screen — disabled so users land directly on the
+    spinner. Kept here (commented) in case we need to bring it back.
 
     <div id="screen1" class="controls">
       <div class="field">
@@ -292,6 +398,8 @@
         </button>
       </div>
     </div>
+    -->
+    <div id="screen1" class="controls hidden"></div>
 
     <div id="screen2" class="hidden">
       <div class="wheel-wrap" aria-live="polite">
@@ -311,7 +419,7 @@
             <g id="slices"></g>
           </svg>
         </div>
-        <div class="hub">SPIN</div>
+        <div class="hub" id="hubLabel">SPIN</div>
       </div>
 
       <button type="button" class="spin-btn" id="spinBtn">Spin</button>
@@ -333,11 +441,142 @@
       <div><strong>Cashback</strong><br />20% · 40% · 60% · 100% (no win)</div>
     </div> -->
 
+    <!-- Language picker: auto-shown 10s after load on a first visit (English is
+    the default until then). The saved choice is remembered on later visits;
+    the 🌐 button reopens this picker any time to change languages. -->
+    <div id="langOverlay" class="lang-overlay hidden">
+      <div class="lang-card">
+        <button
+          type="button"
+          class="lang-close"
+          id="langCloseBtn"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+        <h2>Choose your language<br />भाषा चुनें<br />ભાષા પસંદ કરો</h2>
+        <div class="lang-options">
+          <button type="button" class="lang-option" data-lang="en">
+            English
+          </button>
+          <button type="button" class="lang-option" data-lang="hi">
+            हिंदी
+          </button>
+          <button type="button" class="lang-option" data-lang="gu">
+            ગુજરાતી
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script>
       (function () {
         const params = new URLSearchParams(window.location.search);
         const parsedType = parseInt(params.get("type") || "1", 10);
         const offerType = [1, 2, 3, 4, 5].includes(parsedType) ? parsedType : 1;
+
+        // ------------------------------------------------------------------
+        // i18n: English (default), Hindi, Gujarati.
+        // ------------------------------------------------------------------
+        let currentLang = "en";
+
+        const I18N = {
+          en: {
+            title: "Rakhi Special Spin & Win",
+            heading: "🎁 Rakhi Special Spin & Win 🎁",
+            hub: "SPIN",
+            spinBtn: "Spin",
+            win: "Congratulations! You won!, take screenshot",
+            lose: "Sorry, better luck next time.",
+            prizeLabel: "Prize:",
+            spinAgain: "You can spin again in 7 days.",
+            alreadySpun: "You already spun!",
+            lastPrizeLabel: "Last prize:",
+            comeBack: "Come back in {time} to spin again.",
+            addressLabel: "Address:",
+            mobileLabel: "Mobile:",
+            discount: "Discount",
+            cashback: "Cashback",
+            discountSub: "₹{amount} flat discount on purchase of ₹{min} or more",
+            cashbackSub:
+              "₹{amount} cashback on next purchase of ₹{min} or more, valid for {days} days",
+            days: "d",
+            hours: "h",
+            minutes: "m",
+            fewMinutes: "a few minutes",
+          },
+          hi: {
+            title: "राखी स्पेशल स्पिन एंड विन",
+            heading: "🎁 राखी स्पेशल स्पिन एंड विन 🎁",
+            hub: "स्पिन",
+            spinBtn: "स्पिन करें",
+            win: "बधाई हो! आप जीत गए!, स्क्रीनशॉट लें",
+            lose: "क्षमा करें, अगली बार बेहतर किस्मत।",
+            prizeLabel: "इनाम:",
+            spinAgain: "आप 7 दिनों में फिर से स्पिन कर सकते हैं।",
+            alreadySpun: "आप पहले ही स्पिन कर चुके हैं!",
+            lastPrizeLabel: "पिछला इनाम:",
+            comeBack: "फिर से स्पिन करने के लिए {time} में वापस आएं।",
+            addressLabel: "पता:",
+            mobileLabel: "मोबाइल:",
+            discount: "छूट",
+            cashback: "कैशबैक",
+            discountSub: "₹{min} या उससे अधिक की खरीद पर ₹{amount} की फ्लैट छूट",
+            cashbackSub:
+              "₹{min} या उससे अधिक की अगली खरीद पर ₹{amount} कैशबैक, {days} दिनों तक मान्य",
+            days: "दिन",
+            hours: "घंटे",
+            minutes: "मिनट",
+            fewMinutes: "कुछ मिनट",
+          },
+          gu: {
+            title: "રાખી સ્પેશિયલ સ્પિન એન્ડ વિન",
+            heading: "🎁 રાખી સ્પેશિયલ સ્પિન એન્ડ વિન 🎁",
+            hub: "સ્પિન",
+            spinBtn: "સ્પિન કરો",
+            win: "અભિનંદન! તમે જીતી ગયા!, સ્ક્રીનશોટ લો",
+            lose: "માફ કરશો, આગલી વખતે વધુ સારા નસીબની શુભેચ્છા.",
+            prizeLabel: "ઇનામ:",
+            spinAgain: "તમે 7 દિવસ પછી ફરીથી સ્પિન કરી શકો છો.",
+            alreadySpun: "તમે પહેલેથી જ સ્પિન કરી ચૂક્યા છો!",
+            lastPrizeLabel: "છેલ્લું ઇનામ:",
+            comeBack: "ફરીથી સ્પિન કરવા માટે {time} માં પાછા આવો.",
+            addressLabel: "સરનામું:",
+            mobileLabel: "મોબાઇલ:",
+            discount: "ડિસ્કાઉન્ટ",
+            cashback: "કેશબેક",
+            discountSub: "₹{min} અથવા વધુની ખરીદી પર ₹{amount} ફ્લેટ ડિસ્કાઉન્ટ",
+            cashbackSub:
+              "₹{min} અથવા વધુની આગામી ખરીદી પર ₹{amount} કેશબેક, {days} દિવસ માટે માન્ય",
+            days: "દિવસ",
+            hours: "કલાક",
+            minutes: "મિનિટ",
+            fewMinutes: "થોડી મિનિટો",
+          },
+        };
+
+        function tr(key, vars) {
+          const dict = I18N[currentLang] || I18N.en;
+          let str = dict[key] !== undefined ? dict[key] : I18N.en[key] || "";
+          if (vars) {
+            Object.keys(vars).forEach(function (k) {
+              str = str.replace(`{${k}}`, vars[k]);
+            });
+          }
+          return str;
+        }
+
+        // Remember the visitor's language choice across visits. If nothing is
+        // saved yet, this is a first-time visit: keep the English default and
+        // let the 10s auto-popup (below) introduce the picker.
+        const LANG_KEY = "flowprompt_spinner_lang_v1";
+        let savedLang = null;
+        try {
+          savedLang = window.localStorage.getItem(LANG_KEY);
+        } catch {
+          // localStorage unavailable (e.g. private mode) — fall back to English.
+        }
+        if (savedLang && I18N[savedLang]) currentLang = savedLang;
 
         function makeLogoDataUri(text, color) {
           // Simple placeholder logo so the page works without external assets.
@@ -353,137 +592,44 @@
 
         // Segments in clockwise order starting from first slice's center at -90° + SLICE/2 in our math
         // Index 0 = top-right of first slice when wheel at 0... We draw from -90° (top) clockwise.
+        // Segment amounts/rules are stored language-neutral (kind/amount/minPurchase/validDays);
+        // the label and description shown to the user are generated via tr() so the wheel and
+        // result screens follow the selected language.
         const typeConfigs = {
           1: {
             // PNGs must be served by your web server (or placed next to this HTML).
             // Defaults: logo-type-{type}.png (e.g. logo-type-1.png).
             logoSrc: "./a_logo.png",
             logoFallbackColor: "#7c5cff",
-            mobileNumber: "Mobile: 7568980002",
-            address: "Address: G-303, Anand iLyf",
+            mobileValue: "7568980002",
+            addressValue: "G-303, Anand iLyf",
             segments: [
-              {
-                label: "Rs. 20",
-                sub: "Rs. 20 Flat discount on the purchase of Rs. 150 or more",
-                winnable: true,
-                hue: 265,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 40",
-                sub: "Rs. 40 Flat discount on the purchase of Rs. 300 or more",
-                winnable: true,
-                hue: 255,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 100",
-                sub: "Rs. 100 Flat discount on the purchase of Rs. 500 or more",
-                winnable: false,
-                hue: 245,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 200",
-                sub: "Rs. 200 Flat discount on the purchase of Rs. 600 or more",
-                winnable: false,
-                hue: 0,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 50",
-                sub: "Rs. 50 Cashback on next purchase of Rs. 349 or more, valid for 15 days",
-                winnable: true,
-                hue: 200,
-                type: "Cashback",
-              },
-              {
-                label: "Rs. 80",
-                sub: "Rs. 80 Cashback on next purchase of Rs. 799 or more, valid for 15 days",
-                winnable: true,
-                hue: 190,
-                type: "Cashback",
-              },
-              {
-                label: "Rs. 150",
-                sub: "Rs. 150 Cashback on next purchase of Rs. 800 or more, valid for 15 days",
-                winnable: false,
-                hue: 175,
-                type: "Cashback",
-              },
-              {
-                label: "Rs. 200",
-                sub: "Rs. 200 Cashback on next purchase of Rs. 1000 or more, valid for 15 days",
-                winnable: false,
-                hue: 25,
-                type: "Cashback",
-              },
+              { kind: "discount", amount: 75, minPurchase: 400, winnable: true, hue: 265 },
+              { kind: "discount", amount: 150, minPurchase: 750, winnable: true, hue: 255 },
+              { kind: "discount", amount: 300, minPurchase: 1500, winnable: false, hue: 245 },
+              { kind: "discount", amount: 500, minPurchase: 2000, winnable: false, hue: 0 },
+              // { kind: "cashback", amount: 50, minPurchase: 349, validDays: 15, winnable: true, hue: 200 },
+              // { kind: "cashback", amount: 80, minPurchase: 799, validDays: 15, winnable: true, hue: 190 },
+              // { kind: "cashback", amount: 150, minPurchase: 800, validDays: 15, winnable: false, hue: 175 },
+              // { kind: "cashback", amount: 200, minPurchase: 1000, validDays: 15, winnable: false, hue: 25 },
             ],
           },
           2: {
             logoSrc: "./h_logo.png",
             name: "Hariz Creations",
             logoFallbackColor: "#22c55e",
-            mobileNumber: "Mobile: 8169351068",
-            address: "Address: M-701, Anand iLyf",
+            mobileValue: "8169351068",
+            addressValue: "M-701, Anand iLyf",
             // TODO: replace with your own segments for type=2
             segments: [
-              {
-                label: "Rs. 70",
-                sub: "Rs. 70 Flat discount on the purchase of Rs. 700 or more",
-                winnable: true,
-                hue: 265,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 125",
-                sub: "Rs. 125 Flat discount on the purchase of Rs. 1000 or more",
-                winnable: true,
-                hue: 255,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 200",
-                sub: "Rs. 200 Flat discount on the purchase of Rs. 2000 or more",
-                winnable: true,
-                hue: 245,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 500",
-                sub: "Rs. 500 Flat discount on the purchase of Rs. 3000 or more",
-                winnable: false,
-                hue: 0,
-                type: "Discount",
-              },
-              {
-                label: "Rs. 80",
-                sub: "Rs. 80 Cashback on next purchase of Rs. 800 or more, valid for 7 days",
-                winnable: true,
-                hue: 200,
-                type: "Cashback",
-              },
-              {
-                label: "Rs. 100",
-                sub: "Rs. 100 Cashback on next purchase of Rs. 1000 or more, valid for 7 days",
-                winnable: true,
-                hue: 190,
-                type: "Cashback",
-              },
-              {
-                label: "Rs. 500",
-                sub: "Rs. 500 Cashback on next purchase of Rs. 1500 or more, valid for 7 days",
-                winnable: false,
-                hue: 175,
-                type: "Cashback",
-              },
-              {
-                label: "Rs. 1000",
-                sub: "Rs. 1000 Cashback on next purchase of Rs. 2000 or more, valid for 7 days",
-                winnable: false,
-                hue: 25,
-                type: "Cashback",
-              },
+              { kind: "discount", amount: 70, minPurchase: 700, winnable: true, hue: 265 },
+              { kind: "discount", amount: 125, minPurchase: 1000, winnable: true, hue: 255 },
+              { kind: "discount", amount: 200, minPurchase: 2000, winnable: true, hue: 245 },
+              { kind: "discount", amount: 500, minPurchase: 3000, winnable: false, hue: 0 },
+              { kind: "cashback", amount: 80, minPurchase: 800, validDays: 7, winnable: true, hue: 200 },
+              { kind: "cashback", amount: 100, minPurchase: 1000, validDays: 7, winnable: true, hue: 190 },
+              { kind: "cashback", amount: 500, minPurchase: 1500, validDays: 7, winnable: false, hue: 175 },
+              { kind: "cashback", amount: 1000, minPurchase: 2000, validDays: 7, winnable: false, hue: 25 },
             ],
           },
           3: {
@@ -515,6 +661,26 @@
         let segments = typeConfigs[offerType].segments;
         let SLICE = 360 / segments.length;
 
+        function segLabel(seg) {
+          return `₹${seg.amount}`;
+        }
+
+        function segTypeLabel(seg) {
+          return seg.kind === "cashback" ? tr("cashback") : tr("discount");
+        }
+
+        function buildSubText(seg) {
+          if (!seg) return "";
+          if (seg.kind === "cashback") {
+            return tr("cashbackSub", {
+              amount: seg.amount,
+              min: seg.minPurchase,
+              days: seg.validDays,
+            });
+          }
+          return tr("discountSub", { amount: seg.amount, min: seg.minPurchase });
+        }
+
         const logoEl = document.getElementById("logo");
         if (logoEl) {
           const logoFromQuery = params.get("logo");
@@ -540,8 +706,16 @@
         const changeNumberBtn = document.getElementById("changeNumberBtn");
         const addressEl = document.getElementById("address");
         const mobileNumberEl = document.getElementById("mobile-number");
-        const phoneInput = document.getElementById("phoneInput");
-        const phoneHintEl = document.getElementById("phoneHint");
+        const pageHeadingEl = document.getElementById("pageHeading");
+        const hubLabelEl = document.getElementById("hubLabel");
+        const langOverlayEl = document.getElementById("langOverlay");
+        const langCloseBtn = document.getElementById("langCloseBtn");
+        const langToggleBtn = document.getElementById("langToggleBtn");
+        // Mobile number entry is disabled (see commented #screen1 markup above),
+        // so these no longer resolve to real elements. Left in place in case
+        // the mobile-number screen is restored later.
+        // const phoneInput = document.getElementById("phoneInput");
+        // const phoneHintEl = document.getElementById("phoneHint");
 
         const cx = 100;
         const cy = 100;
@@ -589,7 +763,7 @@
             text.setAttribute("font-size", "11");
             text.setAttribute("font-weight", "700");
             text.setAttribute("transform", `rotate(${mid} ${tx} ${ty})`);
-            text.textContent = seg.label;
+            text.textContent = segLabel(seg);
             slicesG.appendChild(text);
 
             const sub = document.createElementNS(
@@ -604,15 +778,15 @@
             // Different colors for segment type label.
             // (Discount = purple, Cashback = sky blue)
             const subFill =
-              seg.type === "Discount"
+              seg.kind === "discount"
                 ? "rgba(196, 181, 253, 0.95)"
-                : seg.type === "Cashback"
+                : seg.kind === "cashback"
                   ? "rgba(125, 211, 252, 0.95)"
                   : "rgba(240,242,248,0.75)";
             sub.setAttribute("fill", subFill);
             sub.setAttribute("font-size", "6.5");
             sub.setAttribute("transform", `rotate(${mid} ${sx} ${sy})`);
-            sub.textContent = seg.type;
+            sub.textContent = segTypeLabel(seg);
             slicesG.appendChild(sub);
           }
         }
@@ -621,88 +795,23 @@
 
         let currentRotation = 0;
         let spinning = false;
-        let currentPhoneDigits = "";
+        // Tracks what's currently shown on screen3 so it can be re-rendered
+        // in the new language if the user switches language after spinning.
+        let lastResult = null; // { mode: 'win' | 'lose' | 'cooldown', seg }
 
-        const STORAGE_PREFIX = "flowprompt_spinner_won_v1";
+        /*
+        ==========================================================================
+        Mobile-number-gated flow (disabled). Previously the user had to enter and
+        validate a mobile number on Screen 1 before the spinner would unlock, and
+        a win was remembered forever (one spin ever, per device, per offer type).
+        Kept here commented out in case this flow needs to be restored.
+        ==========================================================================
+
+        let currentPhoneDigits = "";
 
         function normalizePhone(raw) {
           const digits = String(raw || "").replace(/\D/g, "");
           return digits;
-        }
-
-        function typeWonKey() {
-          return `${STORAGE_PREFIX}:type=${offerType}`;
-        }
-
-        function parseLegacyWin(raw) {
-          // Legacy compatibility: older versions stored a plain "1" or JSON.
-          if (raw === "1") {
-            return {
-              label: "",
-              sub: "Previous win",
-              type: offerType,
-              wonAt: 0,
-            };
-          }
-          try {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object") return parsed;
-            return {
-              label: "",
-              sub: "Previous win",
-              type: offerType,
-              wonAt: 0,
-            };
-          } catch {
-            return {
-              label: "",
-              sub: "Previous win",
-              type: offerType,
-              wonAt: 0,
-            };
-          }
-        }
-
-        function getTypeWin() {
-          const direct = window.localStorage.getItem(typeWonKey());
-          if (direct) return parseLegacyWin(direct);
-
-          // Migration: if older code stored wins per phone, treat any match as "already spun"
-          // for this type.
-          const phonePrefix = `${STORAGE_PREFIX}:type=${offerType}:phone=`;
-          for (let i = 0; i < window.localStorage.length; i++) {
-            const k = window.localStorage.key(i);
-            if (!k || !k.startsWith(phonePrefix)) continue;
-            const raw = window.localStorage.getItem(k);
-            if (raw) return parseLegacyWin(raw);
-          }
-          return null;
-        }
-
-        function setTypeWin(seg) {
-          if (!seg) return;
-          window.localStorage.setItem(
-            typeWonKey(),
-            JSON.stringify({
-              label: seg.label,
-              sub: seg.sub,
-              type: offerType,
-              wonAt: Date.now(),
-            }),
-          );
-        }
-
-        function escapeHtml(s) {
-          return String(s).replace(/[&<>"']/g, function (c) {
-            const map = {
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#039;",
-            };
-            return map[c] || c;
-          });
         }
 
         function isValidIndianMobile(phoneDigits) {
@@ -713,8 +822,6 @@
         function updateUIForPhone() {
           if (!phoneInput || !phoneHintEl || !spinAndWinBtn) return;
 
-          // If the user already spun for this type on this device, go straight to Screen 3
-          // and do not show the mobile number UI.
           const existingTypeWin = getTypeWin();
           if (existingTypeWin) {
             if (resultEl) {
@@ -759,7 +866,6 @@
 
           currentPhoneDigits = phoneDigits;
 
-          // No previous spin for this type on this device: allow Screen 1.
           screen1 && screen1.classList.remove("hidden");
           screen2 && screen2.classList.add("hidden");
           screen3 && screen3.classList.add("hidden");
@@ -767,120 +873,6 @@
           phoneHintEl.textContent = "";
         }
 
-        function renderScreen3Extras() {
-          const cfg = typeConfigs[offerType] || {};
-          const addressVal = cfg.address || "";
-          const mobileVal = cfg.mobileNumber || "";
-
-          if (addressEl) addressEl.textContent = addressVal;
-          if (mobileNumberEl) mobileNumberEl.textContent = mobileVal;
-        }
-
-        /**
-         * Pointer fixed at top. Slice centers (clockwise from top): (i + 0.5) * SLICE.
-         * CSS rotate(R) is clockwise; after spin, (centerCW + R) mod 360 === 0 at pointer.
-         * So finalRotation mod 360 === (360 - centerCW) mod 360.
-         */
-        function computeFinalRotation(winIndex, jitterDeg) {
-          const centerCW = (winIndex + 0.5) * SLICE + jitterDeg;
-          const needMod = (((360 - (centerCW % 360)) % 360) + 360) % 360;
-          const currentMod = ((currentRotation % 360) + 360) % 360;
-          let add = (needMod - currentMod + 360) % 360;
-          if (add === 0) {
-            add = 360;
-          }
-          const extraSpins = 5 + Math.floor(Math.random() * 4);
-          return currentRotation + extraSpins * 360 + add;
-        }
-
-        function pickWinnableIndex() {
-          const pool = segments
-            .map((s, idx) => (s.winnable ? idx : -1))
-            .filter((idx) => idx >= 0);
-          // Fallback: if a type is misconfigured with no winnable segments, spin still works.
-          if (!pool.length) return Math.floor(Math.random() * segments.length);
-          return pool[Math.floor(Math.random() * pool.length)];
-        }
-
-        function doSpin() {
-          if (spinning) return;
-          const phoneDigits =
-            currentPhoneDigits || normalizePhone(phoneInput.value);
-          if (!phoneDigits || !isValidIndianMobile(phoneDigits)) {
-            updateUIForPhone();
-            return;
-          }
-
-          const existingTypeWin = getTypeWin();
-          if (existingTypeWin) {
-            resultEl.innerHTML =
-              '<div class="prize">You already won!, take screenshot</div>' +
-              '<div class="hint">Mobile: ' +
-              escapeHtml(existingTypeWin.phone || phoneDigits || "") +
-              "</div>";
-            resultEl.innerHTML +=
-              '<div class="hint">Prize: ' +
-              escapeHtml(existingTypeWin.sub || "Previous win") +
-              "</div>";
-            screen2 && screen2.classList.add("hidden");
-            screen3 && screen3.classList.remove("hidden");
-            renderScreen3Extras();
-            return;
-          }
-
-          spinning = true;
-          spinBtn.disabled = true;
-          resultEl.innerHTML = "";
-
-          const winIndex = pickWinnableIndex();
-          const jitter = (Math.random() - 0.5) * (SLICE * 0.55);
-          const finalRotation = computeFinalRotation(winIndex, jitter);
-          currentRotation = finalRotation;
-
-          wheel.style.transitionDuration = "4.2s";
-          wheel.style.transform = `rotate(${finalRotation}deg)`;
-
-          const seg = segments[winIndex];
-          window.setTimeout(function () {
-            spinning = false;
-
-            // Single spin per (type): store the result even if it's non-winnable.
-            if (seg) setTypeWin(seg, phoneDigits);
-
-            if (seg && seg.winnable) {
-              resultEl.innerHTML =
-                '<div class="prize">Congratulations! You won!, take screenshot</div>' +
-                '<div class="hint">Mobile: ' +
-                escapeHtml(phoneDigits) +
-                "</div>" +
-                '<div class="prize">Prize: ' +
-                escapeHtml(seg.sub) +
-                "</div>";
-            } else {
-              resultEl.innerHTML =
-                '<div class="prize">Sorry, better luck next time.</div>' +
-                '<div class="hint">Mobile: ' +
-                escapeHtml(phoneDigits) +
-                "</div>" +
-                '<div class="hint">Prize: ' +
-                (seg ? escapeHtml(seg.sub) : "") +
-                "</div>";
-            }
-
-            // Hide spinner screen and show winning screen.
-            screen2 && screen2.classList.add("hidden");
-            screen3 && screen3.classList.remove("hidden");
-            renderScreen3Extras();
-          }, 4200);
-        }
-
-        if (spinBtn) {
-          spinBtn.addEventListener("click", function () {
-            doSpin();
-          });
-        }
-
-        // Screen 1 -> Screen 2 (or Screen 3 if already won)
         if (spinAndWinBtn) {
           spinAndWinBtn.addEventListener("click", function () {
             if (spinning) return;
@@ -911,7 +903,6 @@
               return;
             }
 
-            // No previous win: go to spinner screen (wheel visible, but not spinning yet).
             resultEl.innerHTML = "";
             currentRotation = 0;
             spinning = false;
@@ -946,7 +937,6 @@
 
         if (phoneInput) {
           phoneInput.addEventListener("input", function () {
-            // Only update screen 1; screen 2/3 are hidden while spinning.
             updateUIForPhone();
           });
           phoneInput.addEventListener("change", function () {
@@ -960,21 +950,295 @@
           });
         }
 
-        // Initial screen state.
-        if (screen1) screen1.classList.remove("hidden");
-        if (screen2) screen2.classList.add("hidden");
-        if (screen3) screen3.classList.add("hidden");
+        ==========================================================================
+        End of disabled mobile-number-gated flow.
+        ==========================================================================
+        */
 
-        // Set initial button state from current input (if any).
-        updateUIForPhone();
-        // Mobile autofill sometimes updates values without firing input/change immediately.
-        // Re-check shortly after load to catch those cases.
-        setTimeout(function () {
-          updateUIForPhone();
-        }, 300);
-        setTimeout(function () {
-          updateUIForPhone();
-        }, 900);
+        // One spin per device per offer type every COOLDOWN_MS. After that
+        // window elapses the same device is allowed to spin again.
+        const STORAGE_PREFIX = "flowprompt_spinner_last_spin_v2";
+        const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+        function spinRecordKey() {
+          return `${STORAGE_PREFIX}:type=${offerType}`;
+        }
+
+        function getSpinRecord() {
+          const raw = window.localStorage.getItem(spinRecordKey());
+          if (!raw) return null;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") return parsed;
+          } catch {
+            // Ignore malformed/legacy entries; treat as no record.
+          }
+          return null;
+        }
+
+        function setSpinRecord(seg) {
+          window.localStorage.setItem(
+            spinRecordKey(),
+            JSON.stringify({
+              kind: seg ? seg.kind : "discount",
+              amount: seg ? seg.amount : 0,
+              minPurchase: seg ? seg.minPurchase : 0,
+              validDays: seg ? seg.validDays : undefined,
+              winnable: seg ? !!seg.winnable : false,
+              type: offerType,
+              spinAt: Date.now(),
+            }),
+          );
+        }
+
+        function msUntilNextSpin() {
+          const record = getSpinRecord();
+          if (!record || !record.spinAt) return 0;
+          const remaining = record.spinAt + COOLDOWN_MS - Date.now();
+          return remaining > 0 ? remaining : 0;
+        }
+
+        function formatRemaining(ms) {
+          const totalMinutes = Math.ceil(ms / 60000);
+          const days = Math.floor(totalMinutes / (24 * 60));
+          const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+          const minutes = totalMinutes % 60;
+          const parts = [];
+          if (days) parts.push(`${days}${tr("days")}`);
+          if (hours) parts.push(`${hours}${tr("hours")}`);
+          if (!days && minutes) parts.push(`${minutes}${tr("minutes")}`);
+          return parts.length ? parts.join(" ") : tr("fewMinutes");
+        }
+
+        function escapeHtml(s) {
+          return String(s).replace(/[&<>"']/g, function (c) {
+            const map = {
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            };
+            return map[c] || c;
+          });
+        }
+
+        function renderScreen3Extras() {
+          const cfg = typeConfigs[offerType] || {};
+          const addressVal = cfg.addressValue || "";
+          const mobileVal = cfg.mobileValue || "";
+
+          if (addressEl) {
+            addressEl.textContent = addressVal
+              ? `${tr("addressLabel")} ${addressVal}`
+              : "";
+          }
+          if (mobileNumberEl) {
+            mobileNumberEl.textContent = mobileVal
+              ? `${tr("mobileLabel")} ${mobileVal}`
+              : "";
+          }
+        }
+
+        // Renders whatever screen3 is currently supposed to show (win, lose,
+        // or cooldown), using the current language. Called both right after a
+        // spin/on load, and again whenever the language changes.
+        function renderResult() {
+          if (!lastResult) return;
+          const seg = lastResult.seg;
+          if (lastResult.mode === "win") {
+            resultEl.innerHTML =
+              `<div class="prize">${tr("win")}</div>` +
+              `<div class="prize">${tr("prizeLabel")} ${escapeHtml(buildSubText(seg))}</div>`;
+          } else if (lastResult.mode === "lose") {
+            resultEl.innerHTML =
+              `<div class="prize">${tr("lose")}</div>` +
+              `<div class="hint">${tr("prizeLabel")} ${escapeHtml(buildSubText(seg))}</div>`;
+          } else {
+            const remaining = msUntilNextSpin();
+            resultEl.innerHTML =
+              `<div class="prize">${tr("alreadySpun")}</div>` +
+              `<div class="hint">${
+                seg
+                  ? `${tr("lastPrizeLabel")} ${escapeHtml(buildSubText(seg))}<br />`
+                  : ""
+              }</div>`;
+          }
+          renderScreen3Extras();
+        }
+
+        function showCooldownScreen(remainingMs) {
+          lastResult = { mode: "cooldown", seg: getSpinRecord() };
+          renderResult();
+          screen1 && screen1.classList.add("hidden");
+          screen2 && screen2.classList.add("hidden");
+          screen3 && screen3.classList.remove("hidden");
+        }
+
+        function showSpinnerScreen() {
+          resultEl.innerHTML = "";
+          lastResult = null;
+          currentRotation = 0;
+          spinning = false;
+          wheel.style.transitionDuration = "0s";
+          wheel.style.transform = "rotate(0deg)";
+          spinBtn && (spinBtn.disabled = false);
+
+          screen1 && screen1.classList.add("hidden");
+          screen2 && screen2.classList.remove("hidden");
+          screen3 && screen3.classList.add("hidden");
+        }
+
+        // Decide which screen to land on: straight to the spinner, unless this
+        // device already spun within the last 7 days.
+        function updateUIForCooldown() {
+          const remainingMs = msUntilNextSpin();
+          if (remainingMs > 0) {
+            showCooldownScreen(remainingMs);
+          } else {
+            showSpinnerScreen();
+          }
+        }
+
+        /**
+         * Pointer fixed at top. Slice centers (clockwise from top): (i + 0.5) * SLICE.
+         * CSS rotate(R) is clockwise; after spin, (centerCW + R) mod 360 === 0 at pointer.
+         * So finalRotation mod 360 === (360 - centerCW) mod 360.
+         */
+        function computeFinalRotation(winIndex, jitterDeg) {
+          const centerCW = (winIndex + 0.5) * SLICE + jitterDeg;
+          const needMod = (((360 - (centerCW % 360)) % 360) + 360) % 360;
+          const currentMod = ((currentRotation % 360) + 360) % 360;
+          let add = (needMod - currentMod + 360) % 360;
+          if (add === 0) {
+            add = 360;
+          }
+          const extraSpins = 5 + Math.floor(Math.random() * 4);
+          return currentRotation + extraSpins * 360 + add;
+        }
+
+        function pickWinnableIndex() {
+          const pool = segments
+            .map((s, idx) => (s.winnable ? idx : -1))
+            .filter((idx) => idx >= 0);
+          // Fallback: if a type is misconfigured with no winnable segments, spin still works.
+          if (!pool.length) return Math.floor(Math.random() * segments.length);
+          return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        function doSpin() {
+          if (spinning) return;
+
+          const remainingMs = msUntilNextSpin();
+          if (remainingMs > 0) {
+            showCooldownScreen(remainingMs);
+            return;
+          }
+
+          spinning = true;
+          spinBtn.disabled = true;
+          resultEl.innerHTML = "";
+
+          const winIndex = pickWinnableIndex();
+          const jitter = (Math.random() - 0.5) * (SLICE * 0.55);
+          const finalRotation = computeFinalRotation(winIndex, jitter);
+          currentRotation = finalRotation;
+
+          wheel.style.transitionDuration = "4.2s";
+          wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+          const seg = segments[winIndex];
+          window.setTimeout(function () {
+            spinning = false;
+
+            // Record the spin (win or lose) so this device is locked out for
+            // COOLDOWN_MS (7 days) before it can spin again.
+            setSpinRecord(seg);
+
+            lastResult = { mode: seg && seg.winnable ? "win" : "lose", seg };
+            renderResult();
+
+            // Hide spinner screen and show winning screen.
+            screen2 && screen2.classList.add("hidden");
+            screen3 && screen3.classList.remove("hidden");
+          }, 4200);
+        }
+
+        if (spinBtn) {
+          spinBtn.addEventListener("click", function () {
+            doSpin();
+          });
+        }
+
+        // ------------------------------------------------------------------
+        // Language switching
+        // ------------------------------------------------------------------
+        const LANG_BUTTON_LABELS = { en: "🌐 EN", hi: "🌐 हिंदी", gu: "🌐 ગુજરાતી" };
+
+        function applyStaticTexts() {
+          document.title = tr("title");
+          if (pageHeadingEl) pageHeadingEl.textContent = tr("heading");
+          if (hubLabelEl) hubLabelEl.textContent = tr("hub");
+          if (spinBtn) spinBtn.textContent = tr("spinBtn");
+          if (langToggleBtn) {
+            langToggleBtn.textContent = LANG_BUTTON_LABELS[currentLang] || "🌐 EN";
+          }
+        }
+
+        function setLanguage(lang) {
+          if (!I18N[lang]) return;
+          currentLang = lang;
+          try {
+            window.localStorage.setItem(LANG_KEY, lang);
+          } catch {
+            // localStorage unavailable — the choice just won't persist.
+          }
+          applyStaticTexts();
+          buildSlices();
+          renderResult();
+        }
+
+        applyStaticTexts();
+
+        if (langOverlayEl) {
+          langOverlayEl.querySelectorAll(".lang-option").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              setLanguage(btn.getAttribute("data-lang"));
+              langOverlayEl.classList.add("hidden");
+            });
+          });
+
+          // Clicking the backdrop (not the card itself) dismisses without changing language.
+          langOverlayEl.addEventListener("click", function (e) {
+            if (e.target === langOverlayEl) langOverlayEl.classList.add("hidden");
+          });
+
+          if (langCloseBtn) {
+            langCloseBtn.addEventListener("click", function () {
+              langOverlayEl.classList.add("hidden");
+            });
+          }
+
+          if (langToggleBtn) {
+            langToggleBtn.addEventListener("click", function () {
+              langOverlayEl.classList.remove("hidden");
+            });
+          }
+
+          // First-time visit only: introduce the language picker after 10s.
+          // Returning visitors keep their saved language and can reopen the
+          // picker any time via the 🌐 button instead.
+          if (!savedLang) {
+            window.setTimeout(function () {
+              langOverlayEl.classList.remove("hidden");
+            }, 10000);
+          }
+        }
+
+        // Land directly on the spinner (or the cooldown screen if this device
+        // already spun within the last 7 days). Screen 1 (mobile number) is
+        // disabled, see above.
+        updateUIForCooldown();
       })();
     </script>
   </body>
